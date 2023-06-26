@@ -132,6 +132,13 @@ class ApiSession:
             self.valid_live_session_token = True
             self.portal_session = False
 
+            # Обновить токен в self.ib
+            self.ib = OAuthIBClient(
+                consumer_key=self.connection.oauth_consumer_key,
+                oauth_access_token=self.connection.oauth_token,
+                live_session_token=self.connection.live_session_token,
+            )
+
             self.live_session_refreshed_at = monotonic()
 
             return True

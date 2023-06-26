@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import logging
 from base64 import b64decode, b64encode
 from datetime import datetime
 from secrets import randbits, token_hex
@@ -12,6 +13,8 @@ from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from cryptography.hazmat.primitives.serialization import load_pem_parameters
+
+log = logging.getLogger("ibkr_oauth")
 
 
 class IbkrOAuth:
@@ -138,9 +141,11 @@ class IbkrOAuth:
         r = requests.post(self.url, headers=headers, timeout=5)
         self.last_request_result = r
 
-        # print("Response:", r.status_code, r.text)
-
-        return r.json()
+        try:
+            return r.json()
+        except Exception as e:
+            log.error(f"Error: {e}, Response: {r}")
+            raise
 
     def decrypt_lst(self, response, secret_integer):
         """

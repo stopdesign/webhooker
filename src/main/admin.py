@@ -207,7 +207,8 @@ class WebhookCallAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        queryset = queryset.prefetch_related("api_calls")
+        # работает в форме редактирования, подтягивает inline-api_call
+        queryset = queryset.select_related()
         return queryset
 
     @short_description("connection")

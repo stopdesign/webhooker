@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     # django
     "admin_interface",
     "colorfield",
-    # "jazzmin",
-    # 'admin_volt.apps.AdminVoltConfig',
+
+    "debug_toolbar",
 
     "django.contrib.admin",
     "django.contrib.auth",
@@ -62,6 +62,7 @@ MIDDLEWARE = [
     # "main.middleware.login_required.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = "project.urls"
