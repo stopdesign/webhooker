@@ -1,0 +1,12 @@
+.dynamic-api_calls .original p {
+    display: none;
+}
+
+.inline-group .tabular tr.has_original td {
+    padding-top: inherit;
+}
+
+.micromodal-trigger {
+    cursor: pointer;
+}
+

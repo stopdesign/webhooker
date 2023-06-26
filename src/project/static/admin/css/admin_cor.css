@@ -1,0 +1,59 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "helvetica neue", helvetica, ubuntu, roboto, noto, "segoe ui", arial, sans-serif;
+    /* font-family: "Roboto", "Lucida Grande", "DejaVu Sans", "Bitstream Vera Sans", Verdana, Arial, sans-serif; */
+    /* -webkit-font-smoothing: antialiased; */
+    /* -moz-osx-font-smoothing: grayscale; */
+    font-feature-settings: "tnum" on, "lnum" on;
+    cursor: default;
+}
+
+#site-name {
+    width: 200px;
+    height: 30px;
+    background: url("../../favicon.png") no-repeat;
+    background-size: contain;
+    display: block;
+
+    font-size: 18px;
+    font-weight: normal;
+    letter-spacing: 0.5px;
+    padding-left: 45px;
+    padding-top: 8px;
+}
+#header a#site-name:link,
+#header a#site-name:visited {
+    color: white !important;
+}
+
+
+#result_list .row2 {
+    background: none;
+}
+
+a, a:link, a:visited {
+    color: #17b;
+}
+a:focus {
+    outline: none !important;
+}
+a:focus, a:hover {
+    color: #06a;
+    text-decoration: underline;
+}
+.addlink,
+.viewlink,
+.changelink,
+.inlineviewlink {
+    background: none;
+}
+
+.admin-interface div.breadcrumbs {
+    background: #999;
+}
+
+.admin-interface #header {
+    --header-bg: transparent;
+    background-image: linear-gradient(to right, #b42e97, #e18700);
+    padding: 15px 40px;
+    color: #fff;
+}

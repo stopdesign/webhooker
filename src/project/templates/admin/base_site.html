@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {% trans "Custom Admin Title" %}{% endblock %}
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="icon" href="{% static "favicon.png" %}" type="image/x-icon" />
+    <link rel="stylesheet" type="text/css" href="{% static "admin/css/admin_cor.css" %}"/>
+{% endblock %}
+
+{% block branding %}
+    <a href="{% url 'admin:index' %}" id="site-name">Webhooker</a>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
