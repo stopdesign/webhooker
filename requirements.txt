@@ -1,5 +1,5 @@
 requests
-# git+ssh://git@github.com/stopdesign/ibkr_web_api@main#egg=ibkr_web_api
+git+ssh://git@github.com/stopdesign/ibkr_web_api@main#egg=ibkr_web_api
 # dev: pip install -e ../ibkr_web_api
 
 psycopg2-binary

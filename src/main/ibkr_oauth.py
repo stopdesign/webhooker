@@ -152,7 +152,7 @@ class IbkrOAuth:
 
         K = pow(int(B, 16), secret_integer, self.dh_prime)
         K_len = (8 + (K + (K < 0)).bit_length()) // 8
-        K_big = K.to_bytes(K_len, signed=True)
+        K_big = K.to_bytes(K_len, "big", signed=True)
 
         sig = hmac.new(K_big, self.token_secret_bytes, hashlib.sha1)
         token = b64encode(sig.digest()).decode()
