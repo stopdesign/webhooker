@@ -1,12 +1,14 @@
 import json
 
 from django.contrib import admin
-from django.forms import TextInput, widgets
 from django.db.models import Count
+from django.forms import TextInput, widgets
 from django.utils.safestring import mark_safe
+
 from project.admin import admin_site
-from project.helpers.admin_decorators import allow_tags, short_description, boolean
-from .models import APICall, Connection, WebhookCall, Webhook
+from project.helpers.admin_decorators import allow_tags, boolean, short_description
+
+from .models import APICall, Connection, Webhook, WebhookCall
 
 
 class PrettyJSONWidget(widgets.Textarea):
@@ -76,19 +78,18 @@ class WebhookAdmin(admin.ModelAdmin):
 
 class PopupWidget(TextInput):
     class Media:
-        css = {
-            'all': ('path/to/custom.css',)
-        }
-        js = ('path/to/custom.js',)
+        css = {"all": ("path/to/custom.css",)}
+        js = ("path/to/custom.js",)
 
     def render(self, name, value, attrs=None, renderer=None):
-
         if value:
             truncated_value = value[:200]
             full_value = value.replace("'", r"\'")
             popup_script = f"openPopup('{full_value}');"
             attrs["onclick"] = popup_script
-            return mark_safe(f"{modal_tmpl}  {truncated_value}<br/><small data-micromodal-trigger='modal-1'>(Click to view full text)</small>")
+            return mark_safe(
+                f"{modal_tmpl}  {truncated_value}<br/><small data-micromodal-trigger='modal-1'>(Click to view full text)</small>"
+            )
         else:
             return ""
 
@@ -140,7 +141,9 @@ class APICallInline(admin.TabularInline):
             truncated_value = value[:150]
             # popup_script = f"openPopup('{full_value}');"
             # attrs["onclick"] = popup_script
-            return mark_safe(f"<span class='micromodal-trigger' data-micromodal-trigger='modal-1'>{truncated_value}</span>{modal_tmpl}")
+            return mark_safe(
+                f"<span class='micromodal-trigger' data-micromodal-trigger='modal-1'>{truncated_value}</span>{modal_tmpl}"
+            )
         else:
             return ""
 
@@ -182,9 +185,7 @@ class WebhookCallAdmin(admin.ModelAdmin):
         "request_body",
         "response_body",
     )
-    exclude = (
-        'request_headers',
-    )
+    exclude = ("request_headers",)
     ordering = ["-timestamp"]
     inlines = [APICallInline]
     list_per_page = 30
@@ -252,23 +253,52 @@ class APICallAdmin(admin.ModelAdmin):
         "response_body_trunc",
     )
     fieldsets = (
-        (None, {
-           'fields': ("connection", "webhook", "webhook_call"),
-        }),
-        ('Request', {
-            'fields': ("timestamp", "method", "url", "request_headers", "request_body"),
-        }),
-        ('Response', {
-            'fields': ("response_status", "duration", "response_headers", "response_body"),
-        }),
+        (
+            None,
+            {
+                "fields": ("connection", "webhook", "webhook_call"),
+            },
+        ),
+        (
+            "Request",
+            {
+                "fields": (
+                    "timestamp",
+                    "method",
+                    "url",
+                    "request_headers",
+                    "request_body",
+                ),
+            },
+        ),
+        (
+            "Response",
+            {
+                "fields": (
+                    "response_status",
+                    "duration",
+                    "response_headers",
+                    "response_body",
+                ),
+            },
+        ),
         # ("connection", "webhook", "webhook_call"),
         # ("timestamp", "method", "url"),
         # "duration",
     )
     readonly_fields = [
-        "connection", "webhook", "webhook_call",
-        "timestamp", "method", "url", "request_headers", "request_body",
-        "response_status", "duration", "response_headers", "response_body",
+        "connection",
+        "webhook",
+        "webhook_call",
+        "timestamp",
+        "method",
+        "url",
+        "request_headers",
+        "request_body",
+        "response_status",
+        "duration",
+        "response_headers",
+        "response_body",
     ]
     ordering = ["-timestamp"]
     list_per_page = 30

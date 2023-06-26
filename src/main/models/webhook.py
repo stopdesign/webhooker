@@ -1,15 +1,16 @@
-from django.db import models
-from string import ascii_letters, digits
 import secrets
+from string import ascii_letters, digits
+
+from django.db import models
 
 alphabet = ascii_letters + digits
 
+
 def hex_uuid():
-    return ''.join(secrets.choice(alphabet) for _ in range(16))
+    return "".join(secrets.choice(alphabet) for _ in range(16))
 
 
 class Webhook(models.Model):
-
     class Mode(models.TextChoices):
         ORDER = "ORDER", "Place order"
         PREVIEW = "PREVIEW", "Preview order"

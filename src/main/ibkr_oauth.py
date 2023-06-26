@@ -1,20 +1,23 @@
 import hashlib
-import requests
 import hmac
 import json
+from base64 import b64decode, b64encode
 from datetime import datetime
-from secrets import token_hex, randbits
+from secrets import randbits, token_hex
 from urllib.parse import quote_plus
+
+import requests
+from Crypto.Cipher import PKCS1_v1_5
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_v1_5
 from Crypto.Signature import pkcs1_15
-from base64 import b64encode, b64decode
 from cryptography.hazmat.primitives.serialization import load_pem_parameters
 
 
 class IbkrOAuth:
     """
+    Класс, занимающийся получением OAuth live session token в IBKR.
+    Реализована их версия протокола по описанию из документа:
     https://www.interactivebrokers.com/webtradingapi/oauth.pdf
     """
 
