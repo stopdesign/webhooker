@@ -3,51 +3,17 @@ import logging
 from random import randint
 from time import sleep
 
-from django.http import HttpRequest, JsonResponse
-from ipware import get_client_ip
-
 from main.ibkr_api_session import ApiSession, log_api_call
 from main.models import Webhook, WebhookCall
 
 log = logging.getLogger("ibkr_api_hook")
 
 
-def get_request_headers(request: HttpRequest) -> dict:
-    headers = {}
-    for header, value in request.headers.items():
-        headers[header] = value
-    return headers
+def process_webhook_call(webhook_call, reset_token=False):
+    webhook = webhook_call.webhook
+    payload = json.loads(webhook_call.request_body)
 
-
-def webhook_call_view(request, uid, reset_token=False):
-    # идеи: добавить необязательное поле "nonce"
-
-    log.info("=============== WEBHOOK =================")
-    log.info(f"Webhook_call, {uid}")
-
-    try:
-        webhook = Webhook.objects.get(uid=uid)
-    except Webhook.DoesNotExist:
-        return JsonResponse({"status": "404"}, status=404)
-
-    ####################################################
-    # Создать WebhookCall и сохранить там параметры вызова
-
-    payload = request.body.decode("utf-8")
-
-    request_headers = get_request_headers(request)
-    request_headers_str = json.dumps(request_headers, indent=2, default=str)
-
-    client_ip, _ = get_client_ip(request)
-
-    webhook_call = WebhookCall(
-        webhook=webhook,
-        method=request.method,
-        request_headers=request_headers_str,
-        request_body=payload,
-        client_ip=client_ip,
-    )
-    webhook_call.save()
+    webhook_call.success = False
 
     ####################################################
     # Авторизация
@@ -64,8 +30,8 @@ def webhook_call_view(request, uid, reset_token=False):
             api.auth_machine()
         except Exception as e:
             log.error(f"Auth Machine Exception: {e}")
-            result = {"status": "error", "exception": str(e)}
-            return JsonResponse(result, status=400)
+            webhook_call.save()
+            return
 
     # Получить account_uid, если его еще нет
     if not webhook.connection.account_uid:
@@ -73,8 +39,8 @@ def webhook_call_view(request, uid, reset_token=False):
             api.get_account_uid()
         except Exception as e:
             log.error(f"Account UID Exception: {e}")
-            result = {"status": "error", "exception": str(e)}
-            return JsonResponse(result, status=400)
+            webhook_call.save()
+            return
 
     # Пока всё ok
     log.error("AUTH DONE")
@@ -83,7 +49,17 @@ def webhook_call_view(request, uid, reset_token=False):
     sleep(0.5)
 
     ####################################################
-    # Тестовый ордер и другие полезные действия
+
+    print("payload", payload)
+
+    conid = int(payload.get("conid"))
+    target_position = int(payload.get("position"))
+
+    side = payload.get("side")
+    limit_price = float(payload.get("price"))
+
+    ####################################################
+    # Полезные действия
 
     account = webhook.connection.account_uid
 
@@ -99,77 +75,105 @@ def webhook_call_view(request, uid, reset_token=False):
     res = api.ib.portfolio.positions_simple(account)
     log_api_call(webhook_call, res, "positions")
 
+    current_position = 0
+    for pos in res.json:
+        if pos.get("conid") == conid:
+            current_position = int(pos.get("position"))
+    print("POSITION:", current_position)
+
+    orders = None
+
     # Список ордеров
     for _ in range(3):
         res = api.ib.accounts.orders()
         log_api_call(webhook_call, res, "orders")
         if res.json and res.json.get("snapshot") == True:
             try:
-                active_orders_cnt = 0
-                for o in res.json.get("orders", []):
-                    if o.get("status") not in ["Inactive", "Cancelled"]:
-                        active_orders_cnt += 1
-                if active_orders_cnt:
-                    log.error(f"Active orders count: {active_orders_cnt}")
+                orders = res.json.get("orders", [])
             except Exception as e:
                 log.exception(f"Order count error: {e}")
-            # Отмена ордеров
-            # for o in res.json["orders"]:
-            #     log.error(f"Cancel order {o['orderId']}")
-            #     api.ib.accounts.cancel_order(account, o["orderId"])
             break
         sleep(0.5)
 
-    # ConID search
-    # res = api.ib.trsrv.stocks("AAPL,TSLA,MSFT,NFLX,SPY")
+    # Посчитать активные ордеры
+    active_orders_cnt = 0
+    for o in orders or []:
+        if o.get("status") not in ["Inactive", "Cancelled"]:
+            active_orders_cnt += 1
+    if active_orders_cnt:
+        log.error(f"Active orders: {active_orders_cnt}")
+
+    # Отмена ордеров
+    # for o in res.json["orders"]:
+    #     o_id = o['orderId']
+    #     log.error(f"Cancel order {o_id}")
+    #     api.ib.accounts.cancel_order(account, o_id)
+
+    print("ORDERS:")
+    for i, o in enumerate(orders or []):
+        print(f"{i+1}.", o["conid"], o["ticker"], o["orderDesc"], o["status"])
+
+    # # ConID search
+    # res = api.ib.trsrv.stocks("SPY")
     # log_api_call(webhook_call, res, "conid_search", verbose=True)
 
+    # Что делать с активными ордерами по данному контракту?
+    # - игнорировать
+    # - отменить старые ордеры (сложно, долго)
+    # - не создавать данный ордер
+
+    # Варианты работы с позицией:
+    # - передавать позицию и пытаться сделать такую
+    # - передавать размер ордера
+
+    order_amount = target_position - current_position
+    if order_amount > 0:
+        side = "BUY"
+    if order_amount < 0:
+        order_amount = abs(order_amount)
+        side = "SELL"
+
+    print("order amount", order_amount, side)
+
     order_data = {
-        "conid": 265598,
+        "conid": conid,
         "cOID": "test-%s" % randint(10000, 99999),
         "orderType": "LMT",
-        "price": 100,
-        "side": "BUY",
-        "tif": "GTC",
-        "quantity": 1,
+        "side": side,
+        "tif": "DAY",
+        "price": limit_price,
+        "quantity": order_amount,
         "outsideRTH": True,
         "useAdaptive": False,
     }
+    print(json.dumps(order_data, indent=2, default=str))
 
-    # Из позиций и payload посчитать amount для ордера.
-    # Если
-
-    # Preview Order
-    if Webhook.Mode.PREVIEW == webhook.mode:
-        webhook_call.success = False
-        res = api.ib.accounts.preview_order(account, order_data, confirm=True)
-        log_api_call(webhook_call, res, "what_if")
-        if res and res.json and type(res.json) is dict:
-            if "position" in res.json:
-                webhook_call.success = True
-            if res.json.get("error"):
-                webhook_call.success = False
-                log.error(f"Preview order error: {res.json['error']}")
-
-    # Place Order
-    if Webhook.Mode.ORDER == webhook.mode:
-        webhook_call.success = False
-        ress = api.ib.accounts.place_order(account, order_data, confirm=True)
-        for res in ress:
-            log_api_call(webhook_call, res, "new_order", verbose=True)
-            if res and res.json and type(res.json) is list:
-                o_res = res.json[0]
-                if type(o_res) is dict and o_res.get("order_id"):
+    if order_amount > 0:
+        # Preview Order
+        if Webhook.Mode.PREVIEW == webhook.mode:
+            res = api.ib.accounts.preview_order(account, order_data, confirm=True)
+            log_api_call(webhook_call, res, "what_if")
+            if res and res.json and type(res.json) is dict:
+                if "position" in res.json:
                     webhook_call.success = True
+                if res.json.get("error"):
+                    log.error(f"Preview order error: {res.json['error']}")
 
-    # Разлогин (для тестов)
-    res = api.ib.iserver.portal_logout()
-    log_api_call(webhook_call, res, "portal_logout")
+        # Place Order
+        if Webhook.Mode.ORDER == webhook.mode:
+            ress = api.ib.accounts.place_order(account, order_data, confirm=True)
+            for res in ress:
+                log_api_call(webhook_call, res, "new_order", verbose=True)
+                if res and res.json and type(res.json) is list:
+                    o_res = res.json[0]
+                    if type(o_res) is dict and o_res.get("order_id"):
+                        webhook_call.success = True
+    else:
+        log.warning("No changes in position")
+        webhook_call.success = True
 
-    result = {"status": "ok", "mode": webhook.mode}
-    status_code = 200
+    # # Разлогин (для тестов)
+    # res = api.ib.iserver.portal_logout()
+    # log_api_call(webhook_call, res, "portal_logout")
 
-    webhook_call.response_body = json.dumps(result, default=str)
     webhook_call.save()
-
-    return JsonResponse(result, status=status_code)

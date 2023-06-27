@@ -218,7 +218,7 @@ class ApiSession:
 
     def reset_token(self):
         log.error("RESET TOKEN")
-        now = datetime.now().replace(tzinfo=timezone.utc)
+        now = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.valid_live_session_token = False
         self.portal_session = False
         self.connection.live_session_token = ""
