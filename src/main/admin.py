@@ -2,8 +2,11 @@ import json
 
 from django.contrib import admin
 from django.db.models import Count
-from django.forms import TextInput, widgets
+from django.forms import widgets
+from django.urls import reverse
+from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
+from django.utils.timezone import localtime
 
 from project.admin import admin_site
 from project.helpers.admin_decorators import allow_tags, boolean, short_description
@@ -95,7 +98,7 @@ modal_tmpl = """
 class APICallInline(admin.TabularInline):
     model = APICall
     fields = (
-        "timestamp",
+        "admin_link",
         "name",
         "method",
         "url",
@@ -103,7 +106,7 @@ class APICallInline(admin.TabularInline):
         "time",
         "response",
     )
-    readonly_fields = ["timestamp", "status", "time", "response"]
+    readonly_fields = ["admin_link", "status", "time", "response"]
     ordering = ["timestamp"]
     extra = 0
 
@@ -117,7 +120,7 @@ class APICallInline(admin.TabularInline):
                 value = json.dumps(json.loads(value), indent=2)
             except:
                 pass
-            value = "<pre>%s</pre>" % value[:5000]
+            value = "<pre>%s</pre>" % value[:50000]
             modal_html = modal_tmpl.format(id=obj.pk, content=value, title=title)
             return mark_safe(
                 f"<span class='micromodal-trigger' "
@@ -126,6 +129,13 @@ class APICallInline(admin.TabularInline):
             )
         else:
             return ""
+
+    @allow_tags
+    @short_description("timestamp")
+    def admin_link(self, obj):
+        url = reverse("admin:main_apicall_change", args=(obj.id,))
+        val = date_format(localtime(obj.timestamp), "DATETIME_FORMAT")
+        return f"<a href='{url}'>{val}</a>"
 
     def time(self, obj):
         if obj.duration is not None:
@@ -264,9 +274,6 @@ class APICallAdmin(admin.ModelAdmin):
                 ),
             },
         ),
-        # ("connection", "webhook", "webhook_call"),
-        # ("timestamp", "method", "url"),
-        # "duration",
     )
     readonly_fields = [
         "connection",
