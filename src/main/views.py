@@ -4,6 +4,8 @@ import logging
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from ipware import get_client_ip
+from main.payloads import Order
+from pydantic import ValidationError
 
 from main.models import Webhook, WebhookCall
 
@@ -53,16 +55,26 @@ def webhook_call(request, uid):
 
     # Валидация формата и полей запроса
     try:
-        payload = json.loads(raw_payload)
-        assert payload["conid"] > 0
+        # TODO: Разделить валидаторы по разным webhook.mode
+        Order.parse_raw(raw_payload)
 
         result = {"status": "ok", "mode": webhook.mode}
         status_code = 200
 
+    except ValidationError as e:
+        log.error(e)
+
+        result = {
+            "status": "error",
+            "error": "payload_validation",
+            "validation": json.loads(e.json()),
+        }
+        status_code = 400
+
     except Exception as e:
         log.exception(e)
 
-        result = {"status": "error", "error": "invalid_payload"}
+        result = {"status": "error", "error": "payload_parsing"}
         status_code = 400
 
     try:

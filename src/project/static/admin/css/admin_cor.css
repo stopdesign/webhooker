@@ -24,6 +24,9 @@ body {
 #header a#site-name:visited {
     color: white !important;
 }
+#content-start {
+    outline: none;
+}
 
 
 #result_list .row2 {
@@ -56,4 +59,13 @@ a:focus, a:hover {
     background-image: linear-gradient(to right, #b42e97, #e18700);
     padding: 15px 40px;
     color: #fff;
+}
+
+
+#content-main .field-response_headers .readonly,
+#content-main .field-request_headers .readonly,
+#content-main .field-response_body .readonly,
+#content-main .field-request_body .readonly {
+    font-family: Hack, monospace;
+    white-space: pre-wrap;
 }

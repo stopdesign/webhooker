@@ -43,13 +43,19 @@ def raise_on_wait(res):
 
 def log_api_call(call, res, name=None, verbose=False):
     if verbose:
-        dump = json.dumps(res.json, indent=2, default=str)
+        dump = json.dumps(res.response.json(), indent=2, default=str)
         log.info(f"API call: {name}, json: {dump}")
     else:
         log.info(f"API call: {name}, {res}")
 
     webhook = call.webhook
     request = res.response.request
+
+    request_body = None
+    if isinstance(request.body, str):
+        request_body = request.body
+    elif isinstance(request.body, bytes):
+        request_body = request.body.decode()
 
     api_call = APICall(
         connection=webhook.connection,
@@ -59,7 +65,7 @@ def log_api_call(call, res, name=None, verbose=False):
         url=res.response.url,
         method=request.method,
         request_headers=request.headers,
-        request_body=request.body.decode() if request.body else request.body,
+        request_body=request_body,
         response_status=res.response.status_code,
         response_headers=res.response.headers,
         response_body=res.response.text,

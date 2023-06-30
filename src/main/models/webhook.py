@@ -14,6 +14,7 @@ class Webhook(models.Model):
     class Mode(models.TextChoices):
         ORDER = "ORDER", "Place order"
         PREVIEW = "PREVIEW", "Preview order"
+        TG_ALERT = "TG_ALERT", "Telegram alert"
 
     connection = models.ForeignKey("Connection", on_delete=models.CASCADE)
     uid = models.CharField(primary_key=True, default=hex_uuid, editable=False)

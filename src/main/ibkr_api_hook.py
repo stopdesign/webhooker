@@ -5,13 +5,14 @@ from time import sleep
 
 from main.ibkr_api_session import ApiSession, log_api_call
 from main.models import Webhook, WebhookCall
+from main.payloads import Order
 
 log = logging.getLogger("ibkr_api_hook")
 
 
 def process_webhook_call(webhook_call, reset_token=False):
     webhook = webhook_call.webhook
-    payload = json.loads(webhook_call.request_body)
+    raw_payload = webhook_call.request_body
 
     webhook_call.success = False
 
@@ -49,14 +50,14 @@ def process_webhook_call(webhook_call, reset_token=False):
     sleep(0.5)
 
     ####################################################
+    # Парсинг и валидация параметров
 
+    payload = Order.parse_raw(raw_payload)
     print("payload", payload)
 
-    conid = int(payload.get("conid"))
-    target_position = int(payload.get("position"))
-
-    side = payload.get("side")
-    limit_price = float(payload.get("price"))
+    conid = payload.conid
+    target_position = payload.position
+    target_price = payload.price
 
     ####################################################
     # Полезные действия
@@ -77,9 +78,14 @@ def process_webhook_call(webhook_call, reset_token=False):
 
     current_position = 0
     for pos in res.json:
+        # print(pos)
         if pos.get("conid") == conid:
             current_position = int(pos.get("position"))
     print("POSITION:", current_position)
+
+    # res = api.ib.accounts.accounts()
+    # log_api_call(webhook_call, res, "accounts")
+    # sleep(5)
 
     orders = None
 
@@ -127,28 +133,32 @@ def process_webhook_call(webhook_call, reset_token=False):
     # - передавать размер ордера
 
     order_amount = target_position - current_position
+    side = None
+    # limit_price = None
     if order_amount > 0:
         side = "BUY"
+        # limit_price = round(target_price * 1.05, 2)
     if order_amount < 0:
         order_amount = abs(order_amount)
         side = "SELL"
+        # limit_price = round(target_price * 0.95, 2)
 
     print("order amount", order_amount, side)
 
     order_data = {
         "conid": conid,
         "cOID": "test-%s" % randint(10000, 99999),
-        "orderType": "LMT",
+        "orderType": "MKT",
         "side": side,
-        "tif": "DAY",
-        "price": limit_price,
+        "tif": "GTC",
+        # "price": limit_price,
         "quantity": order_amount,
-        "outsideRTH": True,
+        "outsideRTH": False,
         "useAdaptive": False,
     }
     print(json.dumps(order_data, indent=2, default=str))
 
-    if order_amount > 0:
+    if side and order_amount > 0:
         # Preview Order
         if Webhook.Mode.PREVIEW == webhook.mode:
             res = api.ib.accounts.preview_order(account, order_data, confirm=True)

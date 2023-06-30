@@ -19,12 +19,22 @@
     justify-content: center;
     align-items: center;
   }
+  .modal__overlay_close {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+  }
 
   .modal__container {
     background-color: #fff;
-    padding: 30px;
+    padding: 20px;
+    width: 800px;
+    min-height: 500px;
     max-width: 1000px;
-    max-height: 100vh;
+    max-height: 80vh;
     border-radius: 4px;
     overflow-y: auto;
     box-sizing: border-box;
@@ -49,9 +59,19 @@
   .modal__close {
     background: transparent;
     border: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 30px;
+    cursor: pointer;
+  }
+  .modal__close:hover {
+    background: #f5f5f5;
   }
 
-  .modal__header .modal__close:before { content: "\2715"; }
+  .modal__header .modal__close:before {
+    content: "\2715";
+    font-size: 16px;
+  }
 
   .modal__content {
     margin-top: 2rem;
@@ -102,7 +122,7 @@
 
   /**************************\
     Demo Animation Style
-  \**************************/
+
   @keyframes mmfadeIn {
       from { opacity: 0; }
         to { opacity: 1; }
@@ -122,6 +142,8 @@
       from { transform: translateY(0); }
       to { transform: translateY(-10%); }
   }
+  \**************************/
+
 
   .micromodal-slide {
     display: none;

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from django.core.management.base import BaseCommand
 
 from main.ibkr_api_hook import process_webhook_call
+from main.telegram_hook import tg_alert
 from main.models import WebhookCall
 
 log = logging.getLogger("process")
@@ -31,7 +32,10 @@ class Command(BaseCommand):
             hooks = hooks[:1]
 
         for hook in hooks:
-            log.info(f"Process: {hook}")
-            process_webhook_call(hook, reset_token=reset_token)
+            log.info(f"Process: {hook}, {hook.webhook.mode}")
+            if hook.webhook.mode in ["PREVIEW", "ORDER"]:
+                process_webhook_call(hook, reset_token=reset_token)
+            else:
+                tg_alert(hook)
 
         log.info(f"DONE")

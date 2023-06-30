@@ -1,5 +1,6 @@
+const jQuery = window["django"]["jQuery"]
+const MicroModal = window["MicroModal"]
 
-django.jQuery(() => {
-    window.MicroModal.init()
+jQuery(() => {
+    MicroModal.init({ disableFocus: true, disableScroll: true })
 })
-

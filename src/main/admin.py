@@ -61,7 +61,7 @@ class ConnectionAdmin(admin.ModelAdmin):
 
 @admin.register(Webhook, site=admin_site)
 class WebhookAdmin(admin.ModelAdmin):
-    list_display = ("uid", "connection", "call_count", "created_at")
+    list_display = ("uid", "connection", "mode", "call_count", "created_at")
     list_per_page = 25
     list_max_show_all = 1000
     actions_on_top = False
@@ -76,42 +76,16 @@ class WebhookAdmin(admin.ModelAdmin):
         return queryset
 
 
-class PopupWidget(TextInput):
-    class Media:
-        css = {"all": ("path/to/custom.css",)}
-        js = ("path/to/custom.js",)
-
-    def render(self, name, value, attrs=None, renderer=None):
-        if value:
-            truncated_value = value[:200]
-            full_value = value.replace("'", r"\'")
-            popup_script = f"openPopup('{full_value}');"
-            attrs["onclick"] = popup_script
-            return mark_safe(
-                f"{modal_tmpl}  {truncated_value}<br/><small data-micromodal-trigger='modal-1'>(Click to view full text)</small>"
-            )
-        else:
-            return ""
-
-    def _format_value(self, value):
-        return value
-
-
 modal_tmpl = """
-  <div class="modal micromodal-slide" id="modal-1" aria-hidden="true">
-    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
-      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-1-title">
+  <div class="modal micromodal-slide" id="{id}" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1">
+      <div class="modal__overlay_close" data-micromodal-close></div>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="{id}-title">
         <header class="modal__header">
-          <div class="modal__title" id="modal-1-title">
-            Response body
-          </div>
+          <div class="modal__title" id="{id}-title">{title}</div>
           <button class="modal__close" aria-label="Close modal" data-micromodal-close></button>
         </header>
-        <main class="modal__content" id="modal-1-content">
-          <p>
-            Try hitting the <code>tab</code> key and notice how the focus stays within the modal itself. Also, <code>esc</code> to close modal.
-          </p>
-        </main>
+        <main class="modal__content" id="{id}-content">{content}</main>
       </div>
     </div>
   </div>
@@ -136,13 +110,19 @@ class APICallInline(admin.TabularInline):
     @allow_tags
     def response(self, obj):
         value = obj.response_body
-        # return str(obj.response_body)[:100]
         if value:
             truncated_value = value[:150]
-            # popup_script = f"openPopup('{full_value}');"
-            # attrs["onclick"] = popup_script
+            title = "Response body"
+            try:
+                value = json.dumps(json.loads(value), indent=2)
+            except:
+                pass
+            value = "<pre>%s</pre>" % value[:5000]
+            modal_html = modal_tmpl.format(id=obj.pk, content=value, title=title)
             return mark_safe(
-                f"<span class='micromodal-trigger' data-micromodal-trigger='modal-1'>{truncated_value}</span>{modal_tmpl}"
+                f"<span class='micromodal-trigger' "
+                f" data-micromodal-trigger='{obj.pk}' "
+                f">{truncated_value}</span>{modal_html}"
             )
         else:
             return ""
@@ -195,7 +175,7 @@ class WebhookCallAdmin(admin.ModelAdmin):
 
     class Media:
         js = [
-            "https://unpkg.com/micromodal/dist/micromodal.min.js",
+            "/static/admin/js/micromodal.min.js",
             "/static/admin/js/admin_modal.js",
         ]
         css = {
@@ -217,7 +197,7 @@ class WebhookCallAdmin(admin.ModelAdmin):
 
     @short_description("hook mode")
     def mode_(self, obj):
-        return str(obj.webhook.mode).title()
+        return obj.webhook.get_mode_display()
 
     @boolean
     @short_description("ok?")
