@@ -172,6 +172,7 @@ class WebhookCallAdmin(admin.ModelAdmin):
     list_max_show_all = 1000
     actions_on_top = False
     actions = None
+    list_filter = ["webhook"]
 
     class Media:
         js = [
@@ -286,6 +287,7 @@ class APICallAdmin(admin.ModelAdmin):
     list_max_show_all = 1000
     actions_on_top = False
     actions = None
+    list_filter = ["webhook"]
 
     def time(self, obj):
         if obj.duration is not None:
