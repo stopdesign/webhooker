@@ -44,7 +44,7 @@ class Result:
 
 
 def tg_alert(webhook_call):
-    text = str(webhook_call)
+    text = str(webhook_call.request_body)
 
     # FIXME: выпилить токен из кода
     # tamara local

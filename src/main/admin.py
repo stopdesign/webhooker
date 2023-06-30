@@ -154,7 +154,7 @@ class WebhookCallAdmin(admin.ModelAdmin):
         "mode_",
         "success_",
         "api_statuses",
-        "request_body",
+        # "request_body",
     )
     readonly_fields = (
         # "uid",
