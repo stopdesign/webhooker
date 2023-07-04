@@ -198,7 +198,6 @@ class WebhookCallAdmin(admin.ModelAdmin):
         css = {
             "all": [
                 "/static/admin/css/micromodal.css",
-                "/static/admin/css/webhook_call.css",
             ]
         }
 

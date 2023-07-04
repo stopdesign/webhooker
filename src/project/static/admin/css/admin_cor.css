@@ -107,8 +107,20 @@ a:focus, a:hover {
 
 
 
+
+/* Per-model customisation */
+
 .field-admin_link a {
     font-weight: 600;
 }
+
+#api_calls-group .original p {
+    display: none;
+}
+
+.inline-group .tabular tr.has_original td {
+    padding-top: inherit;
+}
+
 
 

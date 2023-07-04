@@ -119,6 +119,10 @@
   }
 
 
+  .micromodal-trigger {
+    cursor: pointer;
+  }
+
 
   /**************************\
     Demo Animation Style
