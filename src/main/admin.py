@@ -1,6 +1,7 @@
 import json
 
 from django.contrib import admin
+from django.contrib.humanize.templatetags import humanize
 from django.db.models import Count
 from django.forms import widgets
 from django.urls import reverse
@@ -99,6 +100,7 @@ class APICallInline(admin.TabularInline):
     model = APICall
     fields = (
         "admin_link",
+        "naturaltime",
         "name",
         "method",
         "url",
@@ -106,7 +108,7 @@ class APICallInline(admin.TabularInline):
         "time",
         "response",
     )
-    readonly_fields = ["admin_link", "status", "time", "response"]
+    readonly_fields = ["admin_link", "naturaltime", "status", "time", "response"]
     ordering = ["timestamp"]
     extra = 0
 
@@ -137,6 +139,9 @@ class APICallInline(admin.TabularInline):
         val = date_format(localtime(obj.timestamp), "DATETIME_FORMAT")
         return f"<a href='{url}'>{val}</a>"
 
+    def naturaltime(self, obj):
+        return humanize.naturaltime(obj.timestamp)
+
     def time(self, obj):
         if obj.duration is not None:
             return "{0:0.3f}".format(round(obj.duration, 3))
@@ -159,6 +164,7 @@ class APICallInline(admin.TabularInline):
 class WebhookCallAdmin(admin.ModelAdmin):
     list_display = (
         "timestamp",
+        "naturaltime",
         "webhook",
         "connection",
         "mode_",
@@ -178,7 +184,7 @@ class WebhookCallAdmin(admin.ModelAdmin):
     exclude = ("request_headers",)
     ordering = ["-timestamp"]
     inlines = [APICallInline]
-    list_per_page = 30
+    list_per_page = 25
     list_max_show_all = 1000
     actions_on_top = False
     actions = None
@@ -201,6 +207,9 @@ class WebhookCallAdmin(admin.ModelAdmin):
         # работает в форме редактирования, подтягивает inline-api_call
         queryset = queryset.select_related()
         return queryset
+
+    def naturaltime(self, obj):
+        return humanize.naturaltime(obj.timestamp)
 
     @short_description("connection")
     def connection(self, obj):
@@ -237,6 +246,7 @@ class WebhookCallAdmin(admin.ModelAdmin):
 class APICallAdmin(admin.ModelAdmin):
     list_display = (
         "timestamp",
+        "naturaltime",
         "webhook",
         "method",
         "url",
@@ -290,7 +300,7 @@ class APICallAdmin(admin.ModelAdmin):
         "response_body",
     ]
     ordering = ["-timestamp"]
-    list_per_page = 30
+    list_per_page = 25
     list_max_show_all = 1000
     actions_on_top = False
     actions = None
@@ -299,6 +309,9 @@ class APICallAdmin(admin.ModelAdmin):
     def time(self, obj):
         if obj.duration is not None:
             return "{0:0.3f}".format(round(obj.duration, 3))
+
+    def naturaltime(self, obj):
+        return humanize.naturaltime(obj.timestamp)
 
     @short_description("response body")
     def response_body_trunc(self, obj):

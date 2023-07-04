@@ -51,7 +51,7 @@ a:focus, a:hover {
 }
 
 .admin-interface div.breadcrumbs {
-    background: #999;
+    background: #777;
 }
 
 .admin-interface #header {
@@ -61,11 +61,54 @@ a:focus, a:hover {
     color: #fff;
 }
 
+#toggle-nav-sidebar {
+    display: none;
+}
 
-#content-main .field-response_headers .readonly,
-#content-main .field-request_headers .readonly,
-#content-main .field-response_body .readonly,
-#content-main .field-request_body .readonly {
+/* Чтобы поля формы редактирования не сжимались при длинном значении */
+#content .flex-container {
+    flex-wrap: nowrap;
+}
+#content .aligned label {
+    flex-shrink: 0;
+}
+
+/* Убрать вертикальнй скролл списка в 25 строк на моем экране */
+#changelist.module {
+    margin-bottom: 0;
+}
+
+
+#content .field-response_headers .readonly,
+#content .field-request_headers .readonly,
+#content .field-response_body .readonly,
+#content .field-request_body .readonly {
     font-family: Hack, monospace;
     white-space: pre-wrap;
 }
+
+#content .inline-related tbody td,
+#content .inline-related tbody th,
+.change-list #content tbody td,
+.change-list #content tbody th {
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 500px;
+    padding: 12px;
+}
+#content .inline-related td.original {
+    padding: 0;
+}
+#content .inline-related .form-row p {
+    padding: 0;
+    margin: 0;
+}
+
+
+
+
+.field-admin_link a {
+    font-weight: 600;
+}
+
+
