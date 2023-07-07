@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "admin_interface",
     "colorfield",
 
+    "django_admin_filters",
     "debug_toolbar",
 
     "django.contrib.admin",

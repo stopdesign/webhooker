@@ -2,12 +2,13 @@ import json
 
 from django.contrib import admin
 from django.contrib.humanize.templatetags import humanize
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.forms import widgets
 from django.urls import reverse
 from django.utils.formats import date_format
 from django.utils.safestring import mark_safe
 from django.utils.timezone import localtime
+from django_admin_filters import MultiChoiceExt
 
 from project.admin import admin_site
 from project.helpers.admin_decorators import allow_tags, boolean, short_description
@@ -241,6 +242,19 @@ class WebhookCallAdmin(admin.ModelAdmin):
         return False
 
 
+class StatusFilter(MultiChoiceExt):
+    FILTER_LABEL = "By response status"
+    parameter_name = "status"
+    is_collapsed = False
+    options = [
+        ("success", "Success", Q(response_status=200)),
+        ("fail", "Fail", Q(response_status__gt=200)),
+        ("3xx", "3xx", Q(response_status__gte=300) & Q(response_status__lt=300)),
+        ("4xx", "4xx", Q(response_status__gte=400) & Q(response_status__lt=500)),
+        ("5xx", "5xx", Q(response_status__gte=500) & Q(response_status__lt=600)),
+    ]
+
+
 @admin.register(APICall, site=admin_site)
 class APICallAdmin(admin.ModelAdmin):
     list_display = (
@@ -303,7 +317,7 @@ class APICallAdmin(admin.ModelAdmin):
     list_max_show_all = 1000
     actions_on_top = False
     actions = None
-    list_filter = ["webhook"]
+    list_filter = ["webhook", StatusFilter]
 
     def time(self, obj):
         if obj.duration is not None:

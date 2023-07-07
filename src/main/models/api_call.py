@@ -16,7 +16,7 @@ class APICall(models.Model):
     method = models.CharField(max_length=10)
     request_headers = models.TextField(blank=True, null=True)
     request_body = models.TextField(blank=True, null=True)
-    response_status = models.PositiveIntegerField(blank=True, null=True)
+    response_status = models.PositiveIntegerField(blank=True, null=True, db_index=True)
     response_headers = models.TextField(blank=True, null=True)
     response_body = models.TextField(blank=True, null=True)
     duration = models.FloatField(null=True)
