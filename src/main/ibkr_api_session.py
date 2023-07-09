@@ -5,7 +5,6 @@ from time import monotonic, sleep
 
 from ibkr_web_api import OAuthIBClient
 
-from main.ibkr_oauth import IbkrOAuth
 from main.models import APICall, Connection, Webhook, WebhookCall
 
 log = logging.getLogger("ibkr_api_session")
@@ -24,6 +23,10 @@ class IserverInitError(Exception):
 
 
 class PortalInitError(Exception):
+    pass
+
+
+class LiveSessionTokenError(Exception):
     pass
 
 
@@ -84,6 +87,10 @@ class ApiSession:
             consumer_key=self.connection.oauth_consumer_key,
             oauth_access_token=self.connection.oauth_token,
             live_session_token=self.connection.live_session_token,
+            dh_params=self.connection.dh_params,
+            signature_key=self.connection.signature_key,
+            encryption_key=self.connection.encryption_key,
+            token_secret=self.connection.oauth_token_secret,
         )
 
         self.valid_live_session_token = self._has_valid_lst()
@@ -115,46 +122,35 @@ class ApiSession:
         )
         log.warning(f"Refresh token")
 
-        ibanina = IbkrOAuth(
-            self.connection.oauth_consumer_key,
-            self.connection.oauth_token,
-            self.connection.oauth_token_secret,
-            self.connection.dh_params,
-            self.connection.signature_key,
-            self.connection.encryption_key,
-        )
+        secret_int = self.ib.oauth.generate_secret_int()
+
+        resp = self.ib.oauth.live_session_token(secret_int)
+        log_api_call(self.webhook_call, resp, "live_token")
 
         try:
-            token, token_exp = ibanina.obtain_live_session_token()
-            token_exp = token_exp.replace(tzinfo=timezone.utc)
+            token, exp_dt, sign = self.ib.oauth.decrypt_lst(resp.json, secret_int)
+            exp_dt = exp_dt.replace(tzinfo=timezone.utc)
 
-            res = Result(response=ibanina.last_request_result)
-            log_api_call(self.webhook_call, res, "live_token")
+            # Валидация токена
+            if not self.ib.oauth.validate_token(token, sign):
+                raise ValueError("Invalid token")
+
+            # Обновить токен внутри клиента
+            self.ib._session.live_session_token = token
 
             self.connection.live_session_token = token
-            self.connection.live_session_token_expiration = token_exp
+            self.connection.live_session_token_expiration = exp_dt
             self.connection.save()
 
             self.valid_live_session_token = True
             self.portal_session = False
-
-            # Обновить токен в self.ib
-            self.ib = OAuthIBClient(
-                consumer_key=self.connection.oauth_consumer_key,
-                oauth_access_token=self.connection.oauth_token,
-                live_session_token=self.connection.live_session_token,
-            )
-
             self.live_session_refreshed_at = monotonic()
-
-            return True
 
         except Exception as e:
             self.valid_live_session_token = False
             self.portal_session = False
 
-            log.error("Error obtaining live session token")
-            raise e
+            raise LiveSessionTokenError(e)
 
     def portal_session_init(self):
         """
@@ -166,7 +162,7 @@ class ApiSession:
             if i:
                 sleep(5)
 
-            res = self.ib._session.init_portal_session()
+            res = self.ib.iserver.init_portal_session()
             log_api_call(self.webhook_call, res, "portal")
 
             raise_on_wait(res)
@@ -197,7 +193,7 @@ class ApiSession:
         """
         log.warning(f"Iserver session init")
 
-        res = self.ib._session.auth_request()
+        res = self.ib.iserver._init_session()
         log_api_call(self.webhook_call, res, "iserver")
 
         raise_on_wait(res)
@@ -278,7 +274,7 @@ class ApiSession:
                 self.portal_session = False
                 continue
 
-            except PortalInitError as e:
+            except (LiveSessionTokenError, PortalInitError) as e:
                 log.error(f"Token Error: {e}")
                 self.valid_live_session_token = False
                 self.portal_session = False

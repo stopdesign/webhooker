@@ -95,6 +95,7 @@ a:focus, a:hover {
     overflow: hidden;
     max-width: 500px;
     padding: 12px;
+    vertical-align: baseline;
 }
 #content .inline-related td.original {
     padding: 0;
@@ -122,5 +123,15 @@ a:focus, a:hover {
     padding-top: inherit;
 }
 
+.field-uid,
+.field-webhook,
+.field-oauth_token,
+.field-live_session_token,
+.field-oauth_consumer_key {
+    font-family: Hack, monospace;
+    font-size: 0.8rem;
+    vertical-align: baseline;
+    line-height: 1em;
+}
 
 

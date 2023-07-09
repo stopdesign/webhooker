@@ -1,7 +1,8 @@
 import json
 import logging
-from random import randint
 from time import sleep
+
+from shortuuid import ShortUUID
 
 from main.ibkr_api_session import ApiSession, log_api_call
 from main.models import Webhook, WebhookCall
@@ -10,7 +11,12 @@ from main.payloads import Order
 log = logging.getLogger("ibkr_api_hook")
 
 
-def process_webhook_call(webhook_call, reset_token=False):
+def process_webhook_call(webhook_call: WebhookCall, reset_token=False):
+    """
+    Обработка вебхука, связанного с обращениями в IBKR.
+    Делаются запросы, сохраняется результат.
+    """
+
     webhook = webhook_call.webhook
     raw_payload = webhook_call.request_body
 
@@ -145,9 +151,11 @@ def process_webhook_call(webhook_call, reset_token=False):
 
     print("order amount", order_amount, side)
 
+    # TODO: делать из WebhookCall.pk
+    local_order_id = "wh_%s" % ShortUUID().random(length=8)
     order_data = {
         "conid": conid,
-        "cOID": "test-%s" % randint(10000, 99999),
+        "cOID": local_order_id,
         "orderType": "MKT",
         "side": side,
         "tif": "GTC",

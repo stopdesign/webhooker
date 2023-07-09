@@ -20,4 +20,4 @@ django-admin-list-filters==1.1
 # serve static
 #whitenoise==5.2.0
 
-shortuuid==1.0.1
+shortuuid==1.0.11
