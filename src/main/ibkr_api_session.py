@@ -52,7 +52,7 @@ def log_api_call(call, res, name=None, verbose=False):
         log.info(f"API call: {name}, {res}")
 
     webhook = call.webhook
-    request = res.response.request
+    request = res.request
 
     request_body = None
     if isinstance(request.body, str):
@@ -60,19 +60,31 @@ def log_api_call(call, res, name=None, verbose=False):
     elif isinstance(request.body, bytes):
         request_body = request.body.decode()
 
+    # Reaponse data (if any)
+    if res.response:
+        response_status = res.response.status_code
+        response_headers = res.response.headers
+        response_body = res.response.text
+        duration = res.response.elapsed.total_seconds()
+    else:
+        response_status = None
+        response_headers = None
+        response_body = None
+        duration = None
+
     api_call = APICall(
         connection=webhook.connection,
         webhook=webhook,
         webhook_call=call,
         name=name,
-        url=res.response.url,
+        url=request.url,
         method=request.method,
         request_headers=request.headers,
         request_body=request_body,
-        response_status=res.response.status_code,
-        response_headers=res.response.headers,
-        response_body=res.response.text,
-        duration=res.response.elapsed.total_seconds(),
+        response_status=response_status,
+        response_headers=response_headers,
+        response_body=response_body,
+        duration=duration,
     )
     api_call.save()
 

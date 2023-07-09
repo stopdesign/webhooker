@@ -36,7 +36,7 @@ def color_code(code, text=None) -> str:
     msg = f"{text}" if text else str(code)
     if code in [200, 201]:
         return f"<span style='color: #070'>{msg}</span>"
-    if code >= 400:
+    if code and code >= 400:
         return f"<span style='color: #d00'>{msg}</span>"
     return f"<span>{msg}</span>"
 

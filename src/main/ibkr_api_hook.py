@@ -110,7 +110,7 @@ def process_webhook_call(webhook_call: WebhookCall, reset_token=False):
     # Посчитать активные ордеры
     active_orders_cnt = 0
     for o in orders or []:
-        if o.get("status") not in ["Inactive", "Cancelled"]:
+        if o.get("status") not in ["Inactive", "Cancelled", "Filled"]:
             active_orders_cnt += 1
     if active_orders_cnt:
         log.error(f"Active orders: {active_orders_cnt}")
